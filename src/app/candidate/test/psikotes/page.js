@@ -3,9 +3,11 @@ import { getCurrentUser } from '@/lib/auth';
 import SidebarLayout from '@/components/SidebarLayout';
 import Link from 'next/link';
 import StartButton from './StartButton';
+import { redirect } from 'next/navigation';
 
 export default async function PsikotesStartPage() {
   const user = await getCurrentUser();
+  if (!user) redirect('/login');
   const existingSessions = await sql`SELECT * FROM test_sessions WHERE user_id = ${user.id} AND test_type = 'psikotes' AND status = 'completed' LIMIT 1`;
   const existing = existingSessions.length > 0;
 

@@ -8,7 +8,7 @@ export async function POST(req) {
     const token = cookies().get('auth_token')?.value;
     const user = await verifyToken(token);
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { sessionId, answers, duration } = await req.json();
@@ -20,7 +20,7 @@ export async function POST(req) {
       LIMIT 1
     `;
     if (sessions.length === 0) {
-      return NextResponse.json({ error: 'Active session not found or already completed' }, 404);
+      return NextResponse.json({ error: 'Active session not found or already completed' }, { status: 404 });
     }
 
     const session = sessions[0];
@@ -156,6 +156,6 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error('Submit API Error:', err);
-    return NextResponse.json({ error: 'Server error' }, 500);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

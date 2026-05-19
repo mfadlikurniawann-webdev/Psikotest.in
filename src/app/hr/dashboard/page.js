@@ -1,9 +1,11 @@
 import sql from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import HRDashboardClient from './HRDashboardClient';
+import { redirect } from 'next/navigation';
 
 export default async function HRDashboardPage() {
   const user = await getCurrentUser();
+  if (!user) redirect('/login');
 
   // 1. Fetch Stats
   const totalCandidatesRes = await sql`

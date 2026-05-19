@@ -1,4 +1,6 @@
 import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
+import { verifyToken } from './auth-edge';
 export { signToken, verifyToken } from './auth-edge';
 
 export function hashPassword(password) {
@@ -20,8 +22,6 @@ export function comparePassword(password, hash) {
 
 export async function getCurrentUser() {
   try {
-    const { cookies } = await import('next/headers');
-    const { verifyToken } = await import('./auth-edge');
     const token = cookies().get('auth_token')?.value;
     return await verifyToken(token);
   } catch (e) {

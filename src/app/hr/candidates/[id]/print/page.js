@@ -1,6 +1,6 @@
 import sql from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import AutoPrint from './AutoPrint';
 
 function formatIndoDate(dateStr) {
@@ -16,6 +16,7 @@ function formatIndoDate(dateStr) {
 export default async function HRPrintResultPage({ params }) {
   const { id } = params;
   const user = await getCurrentUser();
+  if (!user) redirect('/login');
 
   // Verify user is HR
   if (user.role !== 'hr') {

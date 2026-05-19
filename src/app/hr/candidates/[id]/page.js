@@ -2,7 +2,7 @@ import sql from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import SidebarLayout from '@/components/SidebarLayout';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 function fmtDate(d) {
   if (!d) return '—';
@@ -17,6 +17,7 @@ function fmtDur(s) { if (!s) return '0 menit'; const m=Math.floor(s/60),sc=s%60;
 
 export default async function HRCandidateDetailPage({ params }) {
   const user = await getCurrentUser();
+  if (!user) redirect('/login');
   const candidates = await sql`SELECT * FROM users WHERE id = ${params.id} AND role='candidate' LIMIT 1`;
   if (!candidates.length) notFound();
   const candidate = candidates[0];

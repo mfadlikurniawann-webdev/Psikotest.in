@@ -13,6 +13,7 @@ function fmtDur(s) { if (!s) return '0 menit'; const m=Math.floor(s/60),sc=s%60;
 
 export default async function ResultPage({ params }) {
   const user    = await getCurrentUser();
+  if (!user) redirect('/login');
   const sessions = await sql`SELECT ts.*, u.name as user_name, u.email as user_email FROM test_sessions ts JOIN users u ON ts.user_id = u.id WHERE ts.id = ${params.sessionId} LIMIT 1`;
   if (!sessions.length) notFound();
   const s = sessions[0];

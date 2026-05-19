@@ -1,9 +1,11 @@
 import sql from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import HRCandidatesClient from './HRCandidatesClient';
+import { redirect } from 'next/navigation';
 
 export default async function HRCandidatesPage() {
   const user = await getCurrentUser();
+  if (!user) redirect('/login');
 
   const posRows = await sql`SELECT DISTINCT position_applied FROM users WHERE role='candidate' AND position_applied IS NOT NULL AND position_applied != '' ORDER BY position_applied ASC`;
 

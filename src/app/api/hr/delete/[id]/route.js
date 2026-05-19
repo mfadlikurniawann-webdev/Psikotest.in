@@ -8,7 +8,7 @@ export async function DELETE(req, { params }) {
     const token = cookies().get('auth_token')?.value;
     const user = await verifyToken(token);
     if (!user || user.role !== 'hr') {
-      return NextResponse.json({ error: 'Unauthorized' }, 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = params;
@@ -18,7 +18,7 @@ export async function DELETE(req, { params }) {
       SELECT id FROM users WHERE id = ${id} AND role = 'candidate' LIMIT 1
     `;
     if (candidates.length === 0) {
-      return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, 404);
+      return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
     }
 
     // Delete candidate
@@ -29,6 +29,6 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('Delete Candidate API Error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, 500);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

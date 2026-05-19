@@ -8,12 +8,12 @@ export async function POST(req) {
     const token = cookies().get('auth_token')?.value;
     const user = await verifyToken(token);
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { sessionId, image } = await req.json();
     if (!image) {
-      return NextResponse.json({ ok: false, error: 'No image data provided' }, 400);
+      return NextResponse.json({ ok: false, error: 'No image data provided' }, { status: 400 });
     }
 
     // Verify session belongs to user and is in progress
@@ -23,7 +23,7 @@ export async function POST(req) {
       LIMIT 1
     `;
     if (sessions.length === 0) {
-      return NextResponse.json({ error: 'Active session not found' }, 404);
+      return NextResponse.json({ error: 'Active session not found' }, { status: 404 });
     }
 
     // Save snapshot in test_violations as 'SNAPSHOT' type
@@ -35,6 +35,6 @@ export async function POST(req) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('Snapshot API Error:', err);
-    return NextResponse.json({ error: 'Server error' }, 500);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

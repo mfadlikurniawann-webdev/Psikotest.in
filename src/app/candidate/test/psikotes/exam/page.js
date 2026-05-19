@@ -5,6 +5,7 @@ import ExamTaker from './ExamTaker';
 
 export default async function PsikotesExamPage() {
   const user = await getCurrentUser();
+  if (!user) redirect('/login');
 
   // 1. Check if there's an in_progress session
   let sessions = await sql`

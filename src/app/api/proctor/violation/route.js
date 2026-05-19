@@ -8,7 +8,7 @@ export async function POST(req) {
     const token = cookies().get('auth_token')?.value;
     const user = await verifyToken(token);
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { sessionId, type, detail } = await req.json();
@@ -20,7 +20,7 @@ export async function POST(req) {
       LIMIT 1
     `;
     if (sessions.length === 0) {
-      return NextResponse.json({ error: 'Active session not found' }, 404);
+      return NextResponse.json({ error: 'Active session not found' }, { status: 404 });
     }
 
     // Log the violation in test_violations table
@@ -58,6 +58,6 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error('Violation API Error:', err);
-    return NextResponse.json({ error: 'Server error' }, 500);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

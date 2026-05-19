@@ -8,7 +8,7 @@ export async function POST(req) {
     const token = cookies().get('auth_token')?.value;
     const user = await verifyToken(token);
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { sessionId } = await req.json();
@@ -29,6 +29,6 @@ export async function POST(req) {
       disqualify_reason: session.disqualify_reason,
     });
   } catch (err) {
-    return NextResponse.json({ status: 'error' }, 500);
+    return NextResponse.json({ status: 'error' }, { status: 500 });
   }
 }

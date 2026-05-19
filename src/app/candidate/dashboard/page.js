@@ -2,6 +2,7 @@ import sql from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import SidebarLayout from '@/components/SidebarLayout';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 function fmtDur(s) {
   if (!s) return '0 menit';
@@ -11,6 +12,7 @@ function fmtDur(s) {
 
 export default async function CandidateDashboardPage() {
   const user = await getCurrentUser();
+  if (!user) redirect('/login');
   const sessions = await sql`SELECT * FROM test_sessions WHERE user_id = ${user.id} AND test_type = 'psikotes' ORDER BY id DESC LIMIT 1`;
   const session     = sessions[0] || null;
   const completed   = session?.status === 'completed';

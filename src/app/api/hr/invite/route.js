@@ -8,13 +8,13 @@ export async function POST(req) {
     const token = cookies().get('auth_token')?.value;
     const user = await verifyToken(token);
     if (!user || user.role !== 'hr') {
-      return NextResponse.json({ error: 'Unauthorized' }, 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, email, position_applied, password } = await req.json();
 
     if (!name || !email) {
-      return NextResponse.json({ error: 'Nama dan email wajib diisi' }, 400);
+      return NextResponse.json({ error: 'Nama dan email wajib diisi' }, { status: 400 });
     }
 
     // Check if email already exists
@@ -22,7 +22,7 @@ export async function POST(req) {
       SELECT id FROM users WHERE email = ${email} LIMIT 1
     `;
     if (existing.length > 0) {
-      return NextResponse.json({ error: 'Alamat email sudah terdaftar' }, 400);
+      return NextResponse.json({ error: 'Alamat email sudah terdaftar' }, { status: 400 });
     }
 
     // Determine password
@@ -42,6 +42,6 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error('Invite Candidate API Error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, 500);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
