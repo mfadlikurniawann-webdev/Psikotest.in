@@ -1,0 +1,25 @@
+/node_modules
+/vendor
+/.env
+/.env.backup
+/.env.production
+/public/storage
+/storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*
+/.phpunit.result.cache
+/docker-compose.override.yml
+/.vagrant
+/.idea/
+/.vscode/
+/npm-debug.log*
+/yarn-error.log*
+/auth.json
+.DS_Store
+Thumbs.db
+*.pdf
+!Format PDF.pdf
