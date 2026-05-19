@@ -8,9 +8,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Playfair Display"', 'serif'],
-        body:    ['"DM Sans"', 'sans-serif'],
-        sans:    ['"DM Sans"', 'sans-serif'],
+        display: ['var(--font-inter)', 'sans-serif'],
+        body:    ['var(--font-inter)', 'sans-serif'],
+        sans:    ['var(--font-inter)', 'sans-serif'],
       },
       colors: {
         ink:  { 50:'#F6F7F9',100:'#E8EAF0',200:'#C9CDD8',300:'#9DA4B5',400:'#6C7591',500:'#4A5270',600:'#343C56',700:'#232940',800:'#161C2E',900:'#0D1117' },
