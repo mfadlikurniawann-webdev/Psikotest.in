@@ -1,4 +1,20 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/login/page": "app/login/page.js"
+  "/api/auth/route": "app/api/auth/route.js",
+  "/api/proctor/snapshot/route": "app/api/proctor/snapshot/route.js",
+  "/api/hr/delete/[id]/route": "app/api/hr/delete/[id]/route.js",
+  "/api/proctor/violation/route": "app/api/proctor/violation/route.js",
+  "/api/proctor/heartbeat/route": "app/api/proctor/heartbeat/route.js",
+  "/api/test/submit/route": "app/api/test/submit/route.js",
+  "/candidate/test/psikotes/exam/page": "app/candidate/test/psikotes/exam/page.js",
+  "/api/hr/invite/route": "app/api/hr/invite/route.js",
+  "/candidate/result/[sessionId]/page": "app/candidate/result/[sessionId]/page.js",
+  "/candidate/dashboard/page": "app/candidate/dashboard/page.js",
+  "/candidate/test/psikotes/page": "app/candidate/test/psikotes/page.js",
+  "/hr/candidates/[id]/print/page": "app/hr/candidates/[id]/print/page.js",
+  "/hr/candidates/[id]/page": "app/hr/candidates/[id]/page.js",
+  "/hr/candidates/page": "app/hr/candidates/page.js",
+  "/hr/dashboard/page": "app/hr/dashboard/page.js",
+  "/login/page": "app/login/page.js",
+  "/register/page": "app/register/page.js"
 }
