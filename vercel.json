@@ -8,8 +8,20 @@
     },
     "routes": [
         {
-            "src": "/(css|js|images|webp|jpg|png|svg|ico|txt|gif|pdf|woff|woff2|ttf|eot|mp4|webm)/(.*)",
+            "src": "/build/(.*)",
+            "dest": "/public/build/$1"
+        },
+        {
+            "src": "/(css|js|images|storage)/(.*)",
             "dest": "/public/$1/$2"
+        },
+        {
+            "src": "/favicon.ico",
+            "dest": "/public/favicon.ico"
+        },
+        {
+            "src": "/robots.txt",
+            "dest": "/public/robots.txt"
         },
         {
             "src": "/(.*)",
@@ -23,8 +35,10 @@
         "APP_EVENTS_CACHE": "/tmp/events.php",
         "APP_ROUTES_CACHE": "/tmp/routes.php",
         "APP_SERVICES_CACHE": "/tmp/services.php",
+        "APP_PACKAGES_CACHE": "/tmp/packages.php",
         "VIEW_COMPILED_PATH": "/tmp",
         "CACHE_STORE": "array",
+        "CACHE_DRIVER": "array",
         "SESSION_DRIVER": "cookie",
         "LOG_CHANNEL": "stderr"
     }
