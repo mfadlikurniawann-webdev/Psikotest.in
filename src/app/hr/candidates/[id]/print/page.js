@@ -39,12 +39,11 @@ export default async function HRPrintResultPage({ params }) {
     ORDER BY id DESC LIMIT 1
   `;
   if (sessions.length === 0) {
-    return <div className="p-8 text-amber-600 font-bold">Kandidat belum menyelesaikan ujian psikotes atau status belum selesai.</div>;
+    return <div className="p-8 text-amber-600 font-bold text-center">Kandidat belum menyelesaikan ujian psikotes atau status belum selesai.</div>;
   }
   const session = sessions[0];
   const detail = session.result_detail || {};
 
-  // Formulating variables identical to original Laravel template logic
   const name = candidate.name;
   const seed = name.length % 3;
 
@@ -52,6 +51,7 @@ export default async function HRPrintResultPage({ params }) {
   const numerikScore = detail.numerik?.score ?? 50;
   const logikaScore = detail.logika?.score ?? 50;
 
+  // Exact scale formulas matching candidate's performance
   const pemahaman = Math.max(1, Math.min(5, Math.round((verbalScore / 100) * 3) + 2 - (seed % 2)));
   const analisisBahasa = Math.max(1, Math.min(5, Math.round((verbalScore / 100) * 3) + 2 + (seed % 2)));
   const berpikirFleksibel = Math.max(1, Math.min(5, Math.round((verbalScore / 100) * 3) + 1 + (seed % 2)));
@@ -120,8 +120,12 @@ export default async function HRPrintResultPage({ params }) {
 
   const renderCells = (val) => {
     return [1, 2, 3, 4, 5].map((i) => (
-      <td key={i} className={`scale-val ${val === i ? 'active' : ''}`}>
-        {val === i ? 'X' : ''}
+      <td key={i} className="scale-cell">
+        {val === i ? (
+          <div className="scale-badge-active">X</div>
+        ) : (
+          <div className="scale-dot-inactive"></div>
+        )}
       </td>
     ));
   };
@@ -129,246 +133,490 @@ export default async function HRPrintResultPage({ params }) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
         @page {
-          margin: 1.5cm;
+          margin: 1.5cm 1.8cm 1.5cm 1.8cm;
           size: A4;
         }
+        
+        * {
+          box-sizing: border-box;
+        }
+        
         body {
-          font-family: 'Helvetica', 'Arial', sans-serif;
+          font-family: 'Inter', 'Helvetica', 'Arial', sans-serif;
           font-size: 11px;
           color: #1e293b;
-          line-height: 1.4;
+          line-height: 1.5;
           background: #ffffff;
           margin: 0;
           padding: 0;
         }
+        
         .page {
           page-break-after: always;
           position: relative;
-          height: auto;
+          height: 100%;
           box-sizing: border-box;
+          padding-bottom: 20px;
         }
+        
         .page-no-break {
           position: relative;
-          height: auto;
           box-sizing: border-box;
         }
         
+        /* Modern Letterhead */
         .header-logo {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           text-align: center;
-          margin-bottom: 15px;
-          border-bottom: 1px solid #cbd5e1;
-          padding-bottom: 8px;
+          margin-bottom: 25px;
+          border-bottom: 2px solid #1e3a8a;
+          padding-bottom: 12px;
+          position: relative;
+        }
+        .header-logo::after {
+          content: '';
+          position: absolute;
+          bottom: -5px;
+          left: 0;
+          width: 100%;
+          height: 1px;
+          background-color: #c9a84c;
         }
         .header-logo .brand {
-          font-size: 16px;
-          font-weight: bold;
-          color: #0f172a;
-          letter-spacing: 2px;
+          font-size: 18px;
+          font-weight: 800;
+          color: #1e3a8a;
+          letter-spacing: 3px;
           text-transform: uppercase;
+          margin: 0;
         }
         .header-logo .sub-brand {
-          font-size: 10px;
-          font-weight: bold;
-          color: #475569;
-          margin-top: 2px;
+          font-size: 9px;
+          font-weight: 600;
+          color: #c9a84c;
+          margin-top: 3px;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
         }
         .header-logo .contact {
           font-size: 8px;
           color: #64748b;
-          margin-top: 2px;
+          margin-top: 4px;
+          font-weight: 500;
         }
-
-        .cover-container {
+        
+        /* Premium Cover Page */
+        .cover-page {
+          border: 4px double #1e3a8a;
+          padding: 40px;
+          height: calc(100vh - 3cm);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          align-items: center;
           text-align: center;
-          padding-top: 3cm;
+          page-break-after: always;
         }
-        .cover-logo {
-          font-size: 28px;
+        .cover-top-box {
+          margin-top: 2cm;
+        }
+        .cover-brand {
+          font-size: 26px;
           font-weight: 800;
-          color: #be185d;
+          color: #1e3a8a;
           letter-spacing: 4px;
-          margin-bottom: 2cm;
+          margin: 0;
         }
-        .cover-logo-desc {
-          font-size: 12px;
-          color: #475569;
-          margin-top: -1.8cm;
-          margin-bottom: 2cm;
+        .cover-brand-sub {
+          font-size: 10px;
+          font-weight: 600;
+          color: #c9a84c;
+          letter-spacing: 2px;
           text-transform: uppercase;
+          margin-top: 5px;
         }
-        .cover-photo-box {
-          background-color: #f1f5f9;
-          border: 1px dashed #94a3b8;
-          height: 5cm;
-          margin: 1cm auto;
-          width: 80%;
-          border-radius: 8px;
-          display: block;
+        
+        .cover-middle-box {
+          margin: 2cm 0;
+          width: 100%;
+          max-width: 480px;
         }
-        .cover-photo-box-content {
-          padding-top: 2cm;
+        .cover-card {
+          background-color: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-left: 5px solid #1e3a8a;
+          padding: 24px 30px;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+          text-align: left;
+        }
+        .cover-card-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1e293b;
+          border-b: 1px solid #e2e8f0;
+          padding-bottom: 8px;
+          margin-bottom: 15px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .cover-card-row {
+          display: flex;
+          margin-bottom: 8px;
+          font-size: 11px;
+        }
+        .cover-card-label {
+          width: 35%;
+          font-weight: 600;
           color: #64748b;
-          font-size: 12px;
-          font-style: italic;
         }
+        .cover-card-val {
+          width: 65%;
+          color: #1e293b;
+          font-weight: 700;
+        }
+        
         .cover-title {
           font-size: 20px;
-          font-weight: bold;
-          color: #0f172a;
-          margin-top: 1.5cm;
+          font-weight: 800;
+          color: #1e3a8a;
+          margin-top: 1cm;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
         .cover-subtitle {
           font-size: 11px;
-          color: #64748b;
-          font-style: italic;
-          margin-top: 5px;
+          color: #c9a84c;
+          font-weight: 600;
+          text-transform: uppercase;
+          margin-top: 6px;
+          letter-spacing: 2px;
+        }
+        
+        .cover-bottom-box {
           margin-bottom: 1.5cm;
         }
-        .cover-bottom {
-          margin-top: 3cm;
-          font-size: 12px;
-          font-weight: bold;
-          color: #0f172a;
+        .cover-bottom-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: #1e3a8a;
           text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 1.5px;
         }
         .cover-bottom-sub {
-          font-size: 9px;
+          font-size: 8.5px;
           color: #64748b;
           margin-top: 4px;
+          font-weight: 500;
         }
 
-        .section-title {
-          font-size: 12px;
-          font-weight: bold;
-          text-transform: uppercase;
-          color: #0f172a;
-          margin-top: 15px;
-          margin-bottom: 8px;
+        /* Potential Review Page Styling */
+        .intro-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: #1e3a8a;
+          border-bottom: 2px solid #e2e8f0;
+          padding-bottom: 6px;
+          margin-bottom: 15px;
         }
+        .intro-lead {
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #475569;
+          margin-bottom: 10px;
+        }
+        .intro-desc {
+          text-align: justify;
+          line-height: 1.6;
+          font-size: 10.5px;
+          color: #334155;
+          margin-bottom: 20px;
+        }
+        
+        .objective-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .objective-item {
+          background-color: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 12px 15px;
+          margin-bottom: 10px;
+          display: flex;
+          gap: 12px;
+        }
+        .objective-num {
+          width: 22px;
+          height: 22px;
+          background-color: #1e3a8a;
+          color: #ffffff;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 10px;
+          flex-shrink: 0;
+        }
+        .objective-content {
+          font-size: 10px;
+          color: #334155;
+          line-height: 1.5;
+        }
+        .objective-content strong {
+          color: #1e293b;
+          display: block;
+          margin-bottom: 3px;
+          font-size: 10.5px;
+        }
+
+        /* Identity and Tables */
+        .section-title {
+          font-size: 13px;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: #1e3a8a;
+          margin-top: 20px;
+          margin-bottom: 10px;
+          letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .section-title::after {
+          content: '';
+          height: 1px;
+          background-color: #e2e8f0;
+          flex-grow: 1;
+        }
+        
         .identitas-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 15px;
+          margin-bottom: 20px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
         .identitas-table td {
-          border: 1px solid #94a3b8;
-          padding: 6px 10px;
+          border: 1px solid #e2e8f0;
+          padding: 8px 12px;
           vertical-align: middle;
+          font-size: 10.5px;
         }
         .identitas-table td.label-num {
-          width: 4%;
+          width: 5%;
           text-align: center;
-          font-weight: bold;
+          font-weight: 600;
+          color: #64748b;
+          background-color: #f8fafc;
         }
         .identitas-table td.label-text {
-          width: 18%;
-          font-weight: bold;
+          width: 20%;
+          font-weight: 600;
+          color: #475569;
+          background-color: #f8fafc;
         }
         .identitas-table td.val-text {
-          width: 28%;
+          width: 25%;
+          color: #1e293b;
+          font-weight: 700;
         }
 
+        /* Aspect Table Styling */
         .hasil-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
+          border: 1px solid #cbd5e1;
+          font-size: 10px;
         }
         .hasil-table th {
-          background-color: #fed7aa;
-          border: 1px solid #475569;
-          padding: 6px;
-          font-weight: bold;
+          background-color: #1e3a8a;
+          color: #ffffff;
+          border: 1px solid #1e3a8a;
+          padding: 8px 6px;
+          font-weight: 600;
           text-align: center;
-          font-size: 10px;
+          font-size: 9px;
           text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         .hasil-table td {
-          border: 1px solid #475569;
-          padding: 5px 8px;
+          border: 1px solid #cbd5e1;
+          padding: 6px 8px;
           vertical-align: middle;
+          color: #334155;
+          line-height: 1.4;
         }
         .hasil-table td.aspect-header {
-          font-weight: bold;
-          background-color: #f8fafc;
+          font-weight: 700;
+          background-color: #f1f5f9;
+          color: #1e3a8a;
           text-transform: uppercase;
           font-size: 9px;
+          letter-spacing: 1px;
+          padding: 8px 10px;
+          border-top: 2px solid #1e3a8a;
+          border-bottom: 1.5px solid #1e3a8a;
         }
-        .hasil-table td.scale-val {
-          width: 4%;
-          text-align: center;
-          font-weight: bold;
-          font-size: 12px;
-        }
-        .hasil-table td.scale-val.active {
-          background-color: #cbd5e1 !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          color: #000000;
+        .hasil-table tbody tr:nth-child(even):not(.aspect-header-row) {
+          background-color: #f8fafc;
         }
         
+        .scale-cell {
+          width: 4%;
+          text-align: center;
+          padding: 4px;
+        }
+        .scale-badge-active {
+          width: 18px;
+          height: 18px;
+          background-color: #1e3a8a;
+          color: #ffffff;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 9px;
+          margin: 0 auto;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .scale-dot-inactive {
+          width: 6px;
+          height: 6px;
+          background-color: #cbd5e1;
+          border-radius: 50%;
+          margin: 0 auto;
+          opacity: 0.6;
+        }
+
+        /* Personality & IQ Info */
         .type-box {
-          border: 1px solid #475569;
-          padding: 8px 12px;
-          font-weight: bold;
-          background-color: #f8fafc;
-          margin-top: 10px;
+          border: 1.5px solid #c9a84c;
+          border-left: 6px solid #c9a84c;
+          padding: 12px 15px;
+          font-weight: 600;
+          background-color: #fdfbf7;
+          border-radius: 8px;
+          margin-top: 15px;
           margin-bottom: 15px;
-          font-size: 10px;
+          font-size: 10.5px;
+          color: #854d0e;
         }
 
         .iq-bar-table {
           width: 100%;
           border-collapse: collapse;
-          margin-top: 10px;
-          margin-bottom: 15px;
+          margin-top: 15px;
+          margin-bottom: 20px;
         }
         .iq-bar-table td {
-          border: 1px solid #475569;
+          border: 1px solid #cbd5e1;
           padding: 8px;
           text-align: center;
-          font-size: 9px;
-          font-weight: bold;
+          font-size: 8.5px;
+          font-weight: 600;
+          color: #475569;
         }
         .iq-bar-table td.iq-label {
-          background-color: #fed7aa;
+          background-color: #1e3a8a;
+          color: #ffffff;
           width: 25%;
-          font-size: 11px;
+          font-size: 10.5px;
           text-align: left;
           padding-left: 12px;
-        }
-        .iq-bar-table td.active {
-          background-color: #94a3b8 !important;
+          font-weight: 700;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
-          color: #ffffff;
+        }
+        .iq-bar-table td.active {
+          background-color: #c9a84c !important;
+          color: #1e293b !important;
+          font-weight: 800;
+          font-size: 9px;
+          text-transform: uppercase;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
 
         .profile-p {
           text-align: justify;
           text-indent: 1cm;
           margin-bottom: 12px;
-          line-height: 1.5;
-          font-size: 10px;
+          line-height: 1.6;
+          font-size: 10.5px;
+          color: #334155;
         }
         
-        .styled-list {
-          margin-top: 5px;
-          margin-bottom: 15px;
-          padding-left: 20px;
+        /* Strength & Development Styled Lists */
+        .list-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 10px;
+          margin-bottom: 20px;
         }
-        .styled-list li {
-          margin-bottom: 6px;
-          line-height: 1.4;
+        .list-card {
+          background-color: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 10px 15px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .list-card.strength {
+          border-left: 4px solid #4a7c59;
+        }
+        .list-card.development {
+          border-left: 4px solid #c9a84c;
+        }
+        
+        .icon-bullet-green {
+          width: 14px;
+          height: 14px;
+          background-color: #4a7c59;
+          border-radius: 50%;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8px;
+          font-weight: bold;
+          flex-shrink: 0;
+        }
+        .icon-bullet-gold {
+          width: 14px;
+          height: 14px;
+          background-color: #c9a84c;
+          border-radius: 50%;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8px;
+          font-weight: bold;
+          flex-shrink: 0;
+        }
+        
+        .list-text {
+          font-size: 10.5px;
+          color: #334155;
           text-align: justify;
-          font-size: 10px;
         }
 
+        /* Signature Styling */
         .sig-container {
-          margin-top: 2cm;
+          margin-top: 2.5cm;
           width: 100%;
         }
         .sig-table {
@@ -388,16 +636,20 @@ export default async function HRPrintResultPage({ params }) {
         .sig-date {
           margin-bottom: 1.5cm;
           font-size: 10px;
+          color: #475569;
+          font-weight: 500;
         }
         .sig-name {
-          font-weight: bold;
+          font-weight: 700;
           text-decoration: underline;
           font-size: 11px;
+          color: #1e293b;
         }
         .sig-license {
           font-size: 9px;
-          color: #475569;
+          color: #64748b;
           margin-top: 2px;
+          font-weight: 500;
         }
         .sig-placeholder {
           height: 1.2cm;
@@ -408,21 +660,45 @@ export default async function HRPrintResultPage({ params }) {
 
       {/* ================= PAGE 1 ================= */}
       <div className="page">
-        <div className="cover-container">
-          <div className="cover-logo">ALPHA CONSULTING</div>
-          <div className="cover-logo-desc">Psychological Service &amp; Business Consulting</div>
+        <div className="cover-page">
+          <div className="cover-top-box">
+            <h1 className="cover-brand">ALPHA CONSULTING</h1>
+            <p className="cover-brand-sub">Psychological Service &amp; Business Consulting</p>
+          </div>
           
-          <div className="cover-photo-box">
-            <div className="cover-photo-box-content">
-              Talent Assessment &amp; Development Program
+          <div className="cover-middle-box">
+            <div className="cover-card">
+              <div className="cover-card-title">Laporan Hasil Psikotes</div>
+              <div className="cover-card-row">
+                <div className="cover-card-label">Nama Lengkap</div>
+                <div className="cover-card-val">{candidate.name}</div>
+              </div>
+              <div className="cover-card-row">
+                <div className="cover-card-label">Jenis Kelamin</div>
+                <div className="cover-card-val">{gender}</div>
+              </div>
+              <div className="cover-card-row">
+                <div className="cover-card-label">Pendidikan</div>
+                <div className="cover-card-val">{education}</div>
+              </div>
+              <div className="cover-card-row">
+                <div className="cover-card-label">Posisi Dilamar</div>
+                <div className="cover-card-val">{candidate.position_applied || '-'}</div>
+              </div>
+              <div className="cover-card-row">
+                <div className="cover-card-label">Tanggal Ujian</div>
+                <div className="cover-card-val">{formatIndoDate(session.completed_at)}</div>
+              </div>
             </div>
+            
+            <h2 className="cover-title">Assessment &amp; Management Talenta</h2>
+            <p className="cover-subtitle">Right Person in Right Position</p>
           </div>
 
-          <div className="cover-title">Assessment &amp; Management Talenta</div>
-          <div className="cover-subtitle">Right Person in Right Position</div>
-
-          <div className="cover-bottom">Outsourcing &amp; Recruitment</div>
-          <div className="cover-bottom-sub">Provide Talent by Needs</div>
+          <div className="cover-bottom-box">
+            <div className="cover-bottom-title">Outsourcing &amp; Recruitment Program</div>
+            <div className="cover-bottom-sub">Provide Talent by Needs</div>
+          </div>
         </div>
       </div>
 
@@ -434,36 +710,51 @@ export default async function HRPrintResultPage({ params }) {
           <div className="contact">E-mail: alphaconsulting.id@gmail.com | HP: 082269899003</div>
         </div>
 
-        <div style={{ marginTop: '30px' }}>
-          <p style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '5px' }}>Potential Review :</p>
-          <p style={{ fontWeight: 'bold', fontSize: '11px', marginBottom: '10px' }}>Potential Review adalah</p>
-          <p style={{ textAlign: 'justify', lineHeight: '1.5', fontSize: '10px', marginBottom: '20px' }}>
-            Potential review adalah Kemampuanmu dalam melakukan potential review ini sangat menunjang kariermu. Sebagian orang belum menyadari ini, terkadang mereka lebih sibuk mengembangkan diri menjadi calon pekerja yang qualified sesuai kebutuhan lapangan kerja, ketimbang menemukan passion melalui kepribadiannya sendiri.
+        <div style={{ marginTop: '20px' }}>
+          <h2 className="intro-title">Potential Review</h2>
+          <p className="intro-lead">Potential Review adalah :</p>
+          <p className="intro-desc">
+            Kemampuanmu dalam melakukan potential review ini sangat menunjang kariermu. Sebagian orang belum menyadari ini, terkadang mereka lebih sibuk mengembangkan diri menjadi calon pekerja yang qualified sesuai kebutuhan lapangan kerja, ketimbang menemukan passion melalui kepribadiannya sendiri.
           </p>
 
-          <p style={{ fontWeight: 'bold', fontSize: '11px', marginBottom: '10px' }}>Tujuan potensial review :</p>
-          <ol style={{ paddingLeft: '20px', lineHeight: '1.6', fontSize: '10px' }}>
-            <li style={{ marginBottom: '12px', textAlign: 'justify' }}>
-              <strong>Mengetahui alasan dalam bertindak</strong><br />
-              Dengan menilai diri sendiri, kamu bisa mengetahui apa yang harus kamu lakukan ketika menghadapi masalah. Setelah kamu menyadari bagaimana kamu mengatasi persoalan, kamu bisa memahami apa yang membuatmu benar-benar berpikir.
+          <p className="intro-lead" style={{ marginTop: '25px', marginBottom: '12px' }}>Tujuan potensial review :</p>
+          <ul className="objective-list">
+            <li className="objective-item">
+              <div className="objective-num">1</div>
+              <div className="objective-content">
+                <strong>Mengetahui alasan dalam bertindak</strong>
+                Dengan menilai diri sendiri, kamu bisa mengetahui apa yang harus kamu lakukan ketika menghadapi masalah. Setelah kamu menyadari bagaimana kamu mengatasi persoalan, kamu bisa memahami apa yang membuatmu benar-benar berpikir.
+              </div>
             </li>
-            <li style={{ marginBottom: '12px', textAlign: 'justify' }}>
-              <strong>Bisa Meningkatkan Kualitas kinerja</strong><br />
-              Setelah mengetahui berbagai kekuranganmu, kamu mulai terdorong untuk memperbaiki diri. Di sini kamu juga punya kesempatan untuk mencari tahu, bagaimana agar bisa bekerja dengan komitmen, jujur, dan penuh tanggung jawab.
+            <li className="objective-item">
+              <div className="objective-num">2</div>
+              <div className="objective-content">
+                <strong>Bisa Meningkatkan Kualitas kinerja</strong>
+                Setelah mengetahui berbagai kekuranganmu, kamu mulai terdorong untuk memperbaiki diri. Di sini kamu juga punya kesempatan untuk mencari tahu, bagaimana agar bisa bekerja dengan komitmen, jujur, dan penuh tanggung jawab.
+              </div>
             </li>
-            <li style={{ marginBottom: '12px', textAlign: 'justify' }}>
-              <strong>Mengetahui progress pekerjaan</strong><br />
-              Sebelumnya kamu telah banyak belajar tentang motivasi diri dan bagaimana meningkatkan kualitas kinerja. Kini kamu bisa membandingkan kinerjamu yang sekarang dengan kinerjamu sebelumnya. Lebih baik, stabil, atau justru menurun?
+            <li className="objective-item">
+              <div className="objective-num">3</div>
+              <div className="objective-content">
+                <strong>Mengetahui progress pekerjaan</strong>
+                Sebelumnya kamu telah banyak belajar tentang motivasi diri dan bagaimana meningkatkan kualitas kinerja. Kini kamu bisa membandingkan kinerjamu yang sekarang dengan kinerjamu sebelumnya. Lebih baik, stabil, atau justru menurun?
+              </div>
             </li>
-            <li style={{ marginBottom: '12px', textAlign: 'justify' }}>
-              <strong>Memiliki pola pikir yang strategis dan sistematis</strong><br />
-              Kamu sudah mampu melakukan penilaian terhadap cara berpikir, tindakan, dan pekerjaanmu. Dengan begitu kamu jadi punya pola pikir yang lebih strategis, artinya tepat sasaran dalam menentukan dan mencapai tujuan. Lalu berpikir sistematis, segala yang kamu pikirkan dan lakukan dapat disusun dengan baik dan terencana.
+            <li className="objective-item">
+              <div className="objective-num">4</div>
+              <div className="objective-content">
+                <strong>Memiliki pola pikir yang strategis dan sistematis</strong>
+                Kamu sudah mampu melakukan penilaian terhadap cara berpikir, tindakan, dan pekerjaanmu. Dengan begitu kamu jadi punya pola pikir yang lebih strategis, artinya tepat sasaran dalam menentukan dan mencapai tujuan. Lalu berpikir sistematis, segala yang kamu pikirkan dan lakukan dapat disusun dengan baik dan terencana.
+              </div>
             </li>
-            <li style={{ marginBottom: '12px', textAlign: 'justify' }}>
-              <strong>Mengevaluasi efektivitas tindakanmu</strong><br />
-              Poin yang nggak kalah penting adalah kamu bisa mengevaluasi diri dari setiap proyek yang kamu kerjakan. Kelebihan, kekurangan, motivasi diri, hingga cara berpikir. Pada tahap akhir, kamu bisa mengetahui implikasi yang ditimbulkan atas tindakanmu sebagai kesimpulan.
+            <li className="objective-item">
+              <div className="objective-num">5</div>
+              <div className="objective-content">
+                <strong>Mengevaluasi efektivitas tindakanmu</strong>
+                Poin yang nggak kalah penting adalah kamu bisa mengevaluasi diri dari setiap proyek yang kamu kerjakan. Kelebihan, kekurangan, motivasi diri, hingga cara berpikir. Pada tahap akhir, kamu bisa mengetahui implikasi yang ditimbulkan atas tindakanmu sebagai kesimpulan.
+              </div>
             </li>
-          </ol>
+          </ul>
         </div>
       </div>
 
@@ -480,7 +771,7 @@ export default async function HRPrintResultPage({ params }) {
           <tbody>
             <tr>
               <td className="label-num">1.</td>
-              <td className="label-text">Nama</td>
+              <td className="label-text">Nama Lengkap</td>
               <td className="val-text">{candidate.name}</td>
               <td className="label-text">Pendidikan</td>
               <td className="val-text">{education}</td>
@@ -489,7 +780,7 @@ export default async function HRPrintResultPage({ params }) {
               <td className="label-num">2.</td>
               <td className="label-text">Jenis Kelamin</td>
               <td className="val-text">{gender}</td>
-              <td className="label-text">Fakultas / Prodi</td>
+              <td className="label-text">Posisi Dilamar</td>
               <td className="val-text">{candidate.position_applied || '-'}</td>
             </tr>
             <tr>
@@ -502,7 +793,7 @@ export default async function HRPrintResultPage({ params }) {
           </tbody>
         </table>
 
-        <div className="section-title" style={{ marginTop: '10px' }}>II. Hasil Psikotes</div>
+        <div className="section-title">II. Hasil Psikotes</div>
         <table className="hasil-table">
           <thead>
             <tr>
@@ -522,7 +813,7 @@ export default async function HRPrintResultPage({ params }) {
           <tbody>
             {/* INTELEGENSI */}
             <tr>
-              <td className="aspect-header" colSpan={8}>INTELESENSI / KOGNITIF</td>
+              <td className="aspect-header" colSpan={8}>INTELEGENSI / KOGNITIF</td>
             </tr>
             <tr>
               <td style={{ fontWeight: 'bold' }}>Pemahaman</td>
@@ -624,7 +915,7 @@ export default async function HRPrintResultPage({ params }) {
           <div className="contact">E-mail: alphaconsulting.id@gmail.com | HP: 082269899003</div>
         </div>
 
-        <table className="hasil-table">
+        <table className="hasil-table" style={{ marginTop: '10px' }}>
           <thead>
             <tr>
               <th rowSpan={2} style={{ width: '25%' }}>Aspek Kepribadian</th>
@@ -745,19 +1036,25 @@ export default async function HRPrintResultPage({ params }) {
             {persText}
           </p>
 
-          <div className="section-title" style={{ marginTop: '25px' }}>Kekuatan</div>
-          <ol className="styled-list" type="a">
+          <div className="section-title">Kekuatan</div>
+          <div className="list-container">
             {strengths.map((strength, i) => (
-              <li key={i}>{strength}</li>
+              <div key={i} className="list-card strength">
+                <div className="icon-bullet-green">✓</div>
+                <div className="list-text">{strength}</div>
+              </div>
             ))}
-          </ol>
+          </div>
 
-          <div className="section-title" style={{ marginTop: '20px' }}>Saran Pengembangan</div>
-          <ol className="styled-list" type="a">
+          <div className="section-title" style={{ marginTop: '15px' }}>Saran Pengembangan</div>
+          <div className="list-container">
             {developments.map((dev, i) => (
-              <li key={i}>{dev}</li>
+              <div key={i} className="list-card development">
+                <div className="icon-bullet-gold">!</div>
+                <div className="list-text">{dev}</div>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
 
         {/* Signature */}

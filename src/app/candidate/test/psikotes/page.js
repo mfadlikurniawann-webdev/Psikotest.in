@@ -8,7 +8,18 @@ import { redirect } from 'next/navigation';
 export default async function PsikotesStartPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
-  const existingSessions = await sql`SELECT * FROM test_sessions WHERE user_id = ${user.id} AND test_type = 'psikotes' AND status = 'completed' LIMIT 1`;
+  if (!user.position_applied) {
+    redirect('/candidate/dashboard');
+  }
+
+  const existingSessions = await sql`
+    SELECT * FROM test_sessions 
+    WHERE user_id = ${user.id} 
+      AND test_type = 'psikotes' 
+      AND status = 'completed' 
+      AND position_applied = ${user.position_applied}
+    LIMIT 1
+  `;
   const existing = existingSessions.length > 0;
 
   const infos = [
