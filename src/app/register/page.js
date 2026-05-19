@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name:'', email:'', password:'', password_confirmation:'', phone:'', birth_date:'', education:'', position_applied:'' });
+  const [form, setForm] = useState({ name:'', email:'', password:'', password_confirmation:'', phone:'', birth_date:'', education:'', position_applied:'', gender:'' });
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const update = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -75,6 +75,14 @@ export default function RegisterPage() {
               </select>
             </div>
             <div>
+              <label className="block text-ink-700 text-xs font-semibold mb-1.5">Jenis Kelamin</label>
+              <select name="gender" value={form.gender} onChange={update} required className={inp} style={{appearance:'none'}}>
+                <option value="">Pilih jenis kelamin</option>
+                <option value="male">Laki-laki</option>
+                <option value="female">Perempuan</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-ink-700 text-xs font-semibold mb-1.5">Posisi Dilamar</label>
               <input type="text" name="position_applied" value={form.position_applied} onChange={update} className={inp} placeholder="Marketing Manager"/>
             </div>

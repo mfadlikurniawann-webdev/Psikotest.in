@@ -23,7 +23,7 @@ const ICONS = {
 
 export default function HRDashboardClient({ user, stats, recentSessions, scoreDistribution }) {
   const [showInvite, setShowInvite] = useState(false);
-  const [form, setForm]   = useState({ name:'', email:'', position_applied:'', password:'' });
+  const [form, setForm]   = useState({ name:'', email:'', position_applied:'', password:'', gender:'' });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]     = useState(null);
   const [err, setErr]     = useState(null);
@@ -33,7 +33,7 @@ export default function HRDashboardClient({ user, stats, recentSessions, scoreDi
     e.preventDefault(); setLoading(true); setMsg(null); setErr(null);
     const res  = await fetch('/api/hr/invite',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(form) });
     const data = await res.json();
-    if (res.ok) { setMsg(`Kandidat ${form.name} berhasil didaftarkan. Password: ${data.password}`); setForm({name:'',email:'',position_applied:'',password:''}); }
+    if (res.ok) { setMsg(`Kandidat ${form.name} berhasil didaftarkan. Password: ${data.password}`); setForm({name:'',email:'',position_applied:'',password:'',gender:''}); }
     else setErr(data.error||'Gagal mendaftarkan');
     setLoading(false);
   };
@@ -51,7 +51,7 @@ export default function HRDashboardClient({ user, stats, recentSessions, scoreDi
 
   return (
     <SidebarLayout user={user}>
-      <div className="p-6 lg:p-8 max-w-7xl">
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
         {/* Header */}
         <div className="mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -148,6 +148,14 @@ export default function HRDashboardClient({ user, stats, recentSessions, scoreDi
             <form onSubmit={handleInvite} className="space-y-3">
               <div><label className="block text-ink-600 text-xs font-semibold mb-1.5">Nama Lengkap</label><input name="name" value={form.name} onChange={upd} required className={inp} placeholder="Budi Santoso"/></div>
               <div><label className="block text-ink-600 text-xs font-semibold mb-1.5">Email</label><input type="email" name="email" value={form.email} onChange={upd} required className={inp} placeholder="budi@email.com"/></div>
+              <div>
+                <label className="block text-ink-600 text-xs font-semibold mb-1.5">Jenis Kelamin</label>
+                <select name="gender" value={form.gender} onChange={upd} required className={inp} style={{appearance:'none'}}>
+                  <option value="">Pilih Jenis Kelamin</option>
+                  <option value="male">Laki-laki</option>
+                  <option value="female">Perempuan</option>
+                </select>
+              </div>
               <div><label className="block text-ink-600 text-xs font-semibold mb-1.5">Posisi Dilamar</label><input name="position_applied" value={form.position_applied} onChange={upd} className={inp} placeholder="Marketing Manager"/></div>
               <div><label className="block text-ink-600 text-xs font-semibold mb-1.5">Password Sementara</label><input name="password" value={form.password} onChange={upd} required className={inp} placeholder="Min. 8 karakter"/></div>
               <button type="submit" disabled={loading} className="w-full bg-ink-900 hover:bg-ink-700 text-white py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60 mt-1">

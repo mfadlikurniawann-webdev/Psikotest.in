@@ -11,7 +11,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, email, position_applied, password } = await req.json();
+    const { name, email, position_applied, password, gender } = await req.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Nama dan email wajib diisi' }, { status: 400 });
@@ -30,8 +30,8 @@ export async function POST(req) {
     const hashedPassword = await hashPassword(plainPassword);
 
     await sql`
-      INSERT INTO users (name, email, password, role, position_applied, is_active, created_at, updated_at)
-      VALUES (${name}, ${email}, ${hashedPassword}, 'candidate', ${position_applied || null}, true, NOW(), NOW())
+      INSERT INTO users (name, email, password, role, position_applied, gender, is_active, created_at, updated_at)
+      VALUES (${name}, ${email}, ${hashedPassword}, 'candidate', ${position_applied || null}, ${gender || null}, true, NOW(), NOW())
     `;
 
     return NextResponse.json({

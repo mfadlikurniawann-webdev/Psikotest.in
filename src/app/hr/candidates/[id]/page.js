@@ -48,7 +48,7 @@ export default async function HRCandidateDetailPage({ params }) {
 
   return (
     <SidebarLayout user={user}>
-      <div className="p-6 lg:p-8 max-w-6xl">
+      <div className="p-6 lg:p-8 max-w-6xl mx-auto w-full">
         {/* Header */}
         <div className="mb-7 flex items-center gap-4 border-b border-ink-100 pb-6">
           <Link href="/hr/candidates" className="w-9 h-9 bg-white border border-ink-200 rounded-xl flex items-center justify-center text-ink-400 hover:text-ink-900 transition shadow-sm">

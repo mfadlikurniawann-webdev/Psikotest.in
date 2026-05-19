@@ -83,7 +83,7 @@ export async function POST(request) {
 
     // --- REGISTER ---
     if (action === 'register') {
-      const { name, email, password, phone, position_applied, birth_date, education } = body;
+      const { name, email, password, phone, position_applied, birth_date, education, gender } = body;
 
       if (!name || !email || !password) {
         return NextResponse.json({ error: 'Nama, email, dan password wajib diisi' }, { status: 400 });
@@ -102,8 +102,8 @@ export async function POST(request) {
       // Hash password and insert
       const hashedPassword = hashPassword(password);
       const newUser = await sql`
-        INSERT INTO users (name, email, password, role, phone, position_applied, birth_date, education, is_active)
-        VALUES (${name}, ${email}, ${hashedPassword}, 'candidate', ${phone || null}, ${position_applied || null}, ${birth_date || null}, ${education || null}, true)
+        INSERT INTO users (name, email, password, role, phone, position_applied, birth_date, education, gender, is_active)
+        VALUES (${name}, ${email}, ${hashedPassword}, 'candidate', ${phone || null}, ${position_applied || null}, ${birth_date || null}, ${education || null}, ${gender || null}, true)
         RETURNING id, name, email, role
       `;
 

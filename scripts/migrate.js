@@ -41,7 +41,7 @@ const getDatabaseUrl = () => {
   return `postgresql://${username}:${password}@${host}:${port}/${database}?sslmode=require`;
 };
 
-const sql = postgres(getDatabaseUrl(), { ssl: 'require' });
+let sql = postgres(getDatabaseUrl(), { ssl: 'require' });
 
 async function run() {
   console.log('Starting migration and seeding...');
@@ -119,10 +119,26 @@ async function run() {
       )
     `;
 
+    console.log('Verifying columns...');
+    await sql`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS gender VARCHAR(50)
+    `;
+    await sql`
+      ALTER TABLE test_sessions 
+      ADD COLUMN IF NOT EXISTS hr_status VARCHAR(50) DEFAULT 'unreviewed',
+      ADD COLUMN IF NOT EXISTS hr_notes TEXT,
+      ADD COLUMN IF NOT EXISTS position_applied VARCHAR(255)
+    `;
+
+    // Recreate connection to avoid cached plan issues after ALTER TABLE
+    await sql.end();
+    sql = postgres(getDatabaseUrl(), { ssl: 'require' });
+
     console.log('Tables verified successfully.');
 
     // 3. Seed Default HR user if none exists
-    const hrUsers = await sql`SELECT * FROM users WHERE role = 'hr' LIMIT 1`;
+    const hrUsers = await sql`SELECT id FROM users WHERE role = 'hr' LIMIT 1`;
     if (hrUsers.length === 0) {
       console.log('No HR user found. Creating default HR account...');
       const defaultPassword = 'password';
@@ -138,30 +154,31 @@ async function run() {
 
     // 4. Extract Questions using PHP helper script
     console.log('Extracting questions from PHP seeder using scripts/extract.php...');
-    let questionsJson;
     try {
-      questionsJson = execSync('php scripts/extract.php', { encoding: 'utf8' });
-    } catch (phpErr) {
-      throw new Error('Failed to run php scripts/extract.php: ' + phpErr.message);
-    }
+      if (fs.existsSync(path.join(__dirname, 'extract.php'))) {
+        const questionsJson = execSync('php scripts/extract.php', { encoding: 'utf8' });
+        const questions = JSON.parse(questionsJson);
+        console.log(`Successfully extracted ${questions.length} questions.`);
 
-    const questions = JSON.parse(questionsJson);
-    console.log(`Successfully extracted ${questions.length} questions.`);
-
-    if (questions.length > 0) {
-      console.log('Clearing old questions and seeding new ones...');
-      await sql`TRUNCATE TABLE test_questions RESTART IDENTITY CASCADE`;
-      
-      for (const q of questions) {
-        // Ensure options is double-checked as valid json or format correctly
-        // q.options is already stringified JSON in the PHP seeder's array mapping
-        const optionsStr = typeof q.options === 'string' ? q.options : JSON.stringify(q.options);
-        await sql`
-          INSERT INTO test_questions (test_type, category, question, options, correct_answer, "order")
-          VALUES (${q.test_type}, ${q.category}, ${q.question}, ${optionsStr}, ${q.correct_answer}, ${q.order})
-        `;
+        if (questions.length > 0) {
+          console.log('Clearing old questions and seeding new ones...');
+          await sql`TRUNCATE TABLE test_questions RESTART IDENTITY CASCADE`;
+          
+          for (const q of questions) {
+            const optionsStr = typeof q.options === 'string' ? q.options : JSON.stringify(q.options);
+            await sql`
+              INSERT INTO test_questions (test_type, category, question, options, correct_answer, "order")
+              VALUES (${q.test_type}, ${q.category}, ${q.question}, ${optionsStr}, ${q.correct_answer}, ${q.order})
+            `;
+          }
+          console.log(`Successfully seeded ${questions.length} questions.`);
+        }
+      } else {
+        console.log('scripts/extract.php not found. Skipping questions seed (using existing database questions).');
       }
-      console.log(`Successfully seeded ${questions.length} questions.`);
+    } catch (phpErr) {
+      console.log('Warning: Failed to run php scripts/extract.php: ' + phpErr.message);
+      console.log('Continuing migration without seeding new questions.');
     }
 
     console.log('Migration & Seeding finished successfully!');

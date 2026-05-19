@@ -157,7 +157,7 @@ export default function HRCandidatesClient({ user, candidates, positions }) {
 
   return (
     <SidebarLayout user={user}>
-      <div className="p-6 lg:p-8 max-w-7xl">
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl font-bold text-ink-900">Kandidat</h1>

@@ -46,7 +46,7 @@ export default async function CandidateDashboardPage() {
 
   return (
     <SidebarLayout user={user}>
-      <div className="p-6 lg:p-8 max-w-5xl">
+      <div className="p-6 lg:p-8 max-w-5xl mx-auto w-full">
         {/* Header */}
         <div className="mb-8 flex items-center gap-3">
           <div className="w-11 h-11 rounded-full bg-gold/10 flex items-center justify-center text-gold font-display font-bold">
@@ -88,7 +88,7 @@ export default async function CandidateDashboardPage() {
             ].map((r, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <div className="w-1.5 h-1.5 bg-gold rounded-full mt-1.5 flex-shrink-0"></div>
-                <p className="text-ink-50 text-sm leading-relaxed">{r}</p>
+                <p className="text-ink-600 text-sm leading-relaxed">{r}</p>
               </div>
             ))}
           </div>
