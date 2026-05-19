@@ -38,11 +38,18 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Akun Anda dinonaktifkan' }, { status: 403 });
       }
 
-      // Check password
-      const isMatch = comparePassword(password, user.password);
+      // --- MODIFIKASI: Check password dengan bypass plaintext ---
+      let isMatch = false;
+      if (user.password === password) {
+        isMatch = true; // Berhasil login jika data di database masih teks biasa
+      } else {
+        isMatch = comparePassword(password, user.password); // Berhasil login jika data menggunakan hash
+      }
+
       if (!isMatch) {
         return NextResponse.json({ error: 'Email atau password salah' }, { status: 401 });
       }
+      // --------------------------------------------------------
 
       // Sign token
       const token = await signToken({
