@@ -13,6 +13,7 @@ export default async function HRCandidatesPage() {
     SELECT u.id, u.name, u.email, u.phone, u.position_applied, u.education, u.birth_date, u.gender,
            json_agg(json_build_object(
              'id', ts.id,
+             'module', ts.module,
              'status', ts.status, 
              'score', ts.score, 
              'personality_type', ts.personality_type, 
@@ -23,7 +24,7 @@ export default async function HRCandidatesPage() {
              'result_detail', ts.result_detail
            )) FILTER (WHERE ts.id IS NOT NULL) as sessions
     FROM users u
-    LEFT JOIN test_sessions ts ON ts.user_id = u.id AND ts.test_type = 'psikotes'
+    LEFT JOIN test_sessions ts ON ts.user_id = u.id
     WHERE u.role = 'candidate'
     GROUP BY u.id
     ORDER BY u.id DESC

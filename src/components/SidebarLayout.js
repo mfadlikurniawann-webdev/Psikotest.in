@@ -26,6 +26,15 @@ function NavItem({ href, label, icon, active, onClick }) {
   );
 }
 
+function NavSection({ title, children }) {
+  return (
+    <div className="mb-2">
+      {title && <p className="px-3.5 mb-2 text-[10px] font-semibold text-ink-500 uppercase tracking-widest">{title}</p>}
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  );
+}
+
 export default function SidebarLayout({ user, children }) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -47,17 +56,15 @@ export default function SidebarLayout({ user, children }) {
 
   const isHr = user?.role === 'hr';
 
-  const hrNav = [
-    { href: '/hr/dashboard',   label: 'Dashboard',  icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z', active: pathname === '/hr/dashboard' },
-    { href: '/hr/candidates',  label: 'Kandidat',   icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', active: pathname.startsWith('/hr/candidate') },
-  ];
-
-  const candidateNav = [
-    { href: '/candidate/dashboard',           label: 'Dashboard',      icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', active: pathname === '/candidate/dashboard' },
-    { href: '/candidate/test/psikotes',        label: 'Psikotes Terpadu', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', active: pathname.startsWith('/candidate/test') },
-  ];
-
-  const navItems = isHr ? hrNav : candidateNav;
+  const ICONS = {
+    dashboard: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z',
+    candidates: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    home: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+    cognitive: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
+    personality: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    graphic: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
+    kraepelin: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+  };
 
   const Sidebar = ({ mobile }) => (
     <aside className={`${mobile
@@ -72,7 +79,7 @@ export default function SidebarLayout({ user, children }) {
         </div>
         <div>
           <p className="font-display font-semibold text-white text-base leading-tight">Psikotest.in</p>
-          <p className="text-ink-400 text-xs">Platform Asesmen</p>
+          <p className="text-ink-400 text-xs">Platform Asesmen HCGA</p>
         </div>
       </div>
 
@@ -92,10 +99,27 @@ export default function SidebarLayout({ user, children }) {
       )}
 
       {/* Nav */}
-      <nav className="flex-1 px-4 py-4 space-y-1">
-        {navItems.map((item) => (
-          <NavItem key={item.href} {...item} onClick={() => setOpen(false)} />
-        ))}
+      <nav className="flex-1 px-4 py-4 space-y-4">
+        {isHr ? (
+          <>
+            <NavSection>
+              <NavItem href="/hr/dashboard" label="Dashboard" icon={ICONS.dashboard} active={pathname === '/hr/dashboard'} onClick={() => setOpen(false)} />
+              <NavItem href="/hr/candidates" label="Kandidat" icon={ICONS.candidates} active={pathname.startsWith('/hr/candidate')} onClick={() => setOpen(false)} />
+            </NavSection>
+          </>
+        ) : (
+          <>
+            <NavSection>
+              <NavItem href="/candidate/dashboard" label="Dashboard" icon={ICONS.home} active={pathname === '/candidate/dashboard'} onClick={() => setOpen(false)} />
+            </NavSection>
+            <NavSection title="Modul Tes">
+              <NavItem href="/candidate/test/cognitive" label="Tes Kognitif" icon={ICONS.cognitive} active={pathname.startsWith('/candidate/test/cognitive')} onClick={() => setOpen(false)} />
+              <NavItem href="/candidate/test/personality" label="Tes Kepribadian" icon={ICONS.personality} active={pathname.startsWith('/candidate/test/personality')} onClick={() => setOpen(false)} />
+              <NavItem href="/candidate/test/graphic" label="Tes Grafis" icon={ICONS.graphic} active={pathname.startsWith('/candidate/test/graphic')} onClick={() => setOpen(false)} />
+              <NavItem href="/candidate/test/kraepelin" label="Tes Kraepelin" icon={ICONS.kraepelin} active={pathname.startsWith('/candidate/test/kraepelin')} onClick={() => setOpen(false)} />
+            </NavSection>
+          </>
+        )}
       </nav>
 
       {/* Logout */}

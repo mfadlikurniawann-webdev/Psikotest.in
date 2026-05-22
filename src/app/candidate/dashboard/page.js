@@ -8,41 +8,44 @@ export default async function CandidateDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  // Find any active in-progress test sessions (independent of position, so they can resume)
-  const inProgressSessions = await sql`
+  // Fetch all sessions for this user grouped by module
+  const allSessions = await sql`
     SELECT * FROM test_sessions 
-    WHERE user_id = ${user.id} AND test_type = 'psikotes' AND status = 'in_progress' 
-    ORDER BY id DESC LIMIT 1
+    WHERE user_id = ${user.id}
+    ORDER BY id DESC
   `;
-  const inProgressSession = inProgressSessions[0] || null;
 
-  // Find completed session for the current applied position
-  let completedSession = null;
-  if (user.position_applied) {
-    const completedSessions = await sql`
-      SELECT * FROM test_sessions 
-      WHERE user_id = ${user.id} 
-        AND test_type = 'psikotes' 
-        AND status = 'completed' 
-        AND position_applied = ${user.position_applied}
-      ORDER BY id DESC LIMIT 1
-    `;
-    completedSession = completedSessions[0] || null;
-  }
+  // Group sessions by module
+  const getSession = (module, status) => {
+    return allSessions.find(s => s.module === module && s.status === status) || null;
+  };
 
-  // Find disqualified session for the current applied position
-  let disqualifiedSession = null;
-  if (user.position_applied) {
-    const disqualifiedSessions = await sql`
-      SELECT * FROM test_sessions 
-      WHERE user_id = ${user.id} 
-        AND test_type = 'psikotes' 
-        AND status = 'disqualified' 
-        AND position_applied = ${user.position_applied}
-      ORDER BY id DESC LIMIT 1
-    `;
-    disqualifiedSession = disqualifiedSessions[0] || null;
-  }
+  const modules = {
+    cognitive: {
+      inProgress: getSession('cognitive', 'in_progress'),
+      completed: getSession('cognitive', 'completed'),
+      disqualified: getSession('cognitive', 'disqualified'),
+    },
+    personality: {
+      inProgress: getSession('personality', 'in_progress'),
+      completed: getSession('personality', 'completed'),
+      disqualified: getSession('personality', 'disqualified'),
+    },
+    graphic: {
+      inProgress: getSession('graphic', 'in_progress'),
+      completed: getSession('graphic', 'completed'),
+      disqualified: getSession('graphic', 'disqualified'),
+    },
+    kraepelin: {
+      inProgress: getSession('kraepelin', 'in_progress'),
+      completed: getSession('kraepelin', 'completed'),
+      disqualified: getSession('kraepelin', 'disqualified'),
+    },
+  };
+
+  // Legacy support: check old 'psikotes' sessions
+  const legacyCompleted = allSessions.find(s => s.test_type === 'psikotes' && s.status === 'completed') || null;
+  const legacyInProgress = allSessions.find(s => s.test_type === 'psikotes' && s.status === 'in_progress') || null;
 
   return (
     <SidebarLayout user={user}>
@@ -64,13 +67,13 @@ export default async function CandidateDashboardPage() {
           </div>
         </div>
 
-        {/* Dynamic Position Manager & Test Status Cards */}
+        {/* Dynamic Position Manager & Test Module Cards */}
         <div className="mb-8 w-full">
           <CandidatePositionManager
             initialPosition={user.position_applied}
-            inProgressSession={inProgressSession}
-            completedSession={completedSession}
-            disqualifiedSession={disqualifiedSession}
+            modules={modules}
+            legacyCompleted={legacyCompleted}
+            legacyInProgress={legacyInProgress}
           />
         </div>
 

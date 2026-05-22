@@ -7,155 +7,143 @@ export async function POST(req) {
   try {
     const token = cookies().get('auth_token')?.value;
     const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { sessionId, answers, duration } = await req.json();
+    const { sessionId, answers, duration, module } = await req.json();
 
-    // Verify session
     const sessions = await sql`
-      SELECT * FROM test_sessions
-      WHERE id = ${sessionId} AND user_id = ${user.id} AND status = 'in_progress'
-      LIMIT 1
+      SELECT * FROM test_sessions WHERE id = ${sessionId} AND user_id = ${user.id} AND status = 'in_progress' LIMIT 1
     `;
-    if (sessions.length === 0) {
-      return NextResponse.json({ error: 'Active session not found or already completed' }, { status: 404 });
-    }
+    if (sessions.length === 0) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
     const session = sessions[0];
+    const sessionModule = module || session.module || 'cognitive';
 
-    // Get all active questions for psikotes
-    const questions = await sql`
-      SELECT id, category, correct_answer, "order"
-      FROM test_questions
-      WHERE test_type = 'psikotes' AND is_active = true
-      ORDER BY "order" ASC
-    `;
-
-    let correctCognitive = 0;
-    const totalCognitive = 75; // Questions 1-75 are cognitive (verbal, numerik, logika)
-
-    let verbalCorrect = 0;
-    let numerikCorrect = 0;
-    let logikaCorrect = 0;
-
-    const personalityTraits = {
-      integritas: 0,  // Questions 76-80 (category = 'integritas')
-      kolaborasi: 0,  // Questions 81-85 (category = 'kolaborasi')
-      kepemimpinan: 0, // Questions 86-90 (category = 'kepemimpinan')
-      stabilitas: 0,   // Questions 91-95 (category = 'stabilitas')
-      ketelitian: 0    // Questions 96-100 (category = 'ketelitian')
-    };
-
-    const personalityCounts = {
-      integritas: 0,
-      kolaborasi: 0,
-      kepemimpinan: 0,
-      stabilitas: 0,
-      ketelitian: 0
-    };
-
-    questions.forEach((q, idx) => {
-      // User's selected option index (0 to N) for this question
-      const userAns = answers[idx] !== undefined ? answers[idx] : null;
-
-      if (idx < 75) {
-        // Cognitive Evaluation
-        const isCorrect = (userAns !== null && parseInt(userAns) === parseInt(q.correct_answer));
-        if (isCorrect) {
-          correctCognitive++;
-          if (idx < 25) {
-            verbalCorrect++;
-          } else if (idx < 50) {
-            numerikCorrect++;
-          } else {
-            logikaCorrect++;
-          }
-        }
-      } else {
-        // Personality Evaluation (Likert scale 1-4)
-        // If not answered, default to 2 (Kurang Sesuai)
-        const score = userAns !== null ? (parseInt(userAns) + 1) : 2;
-        const category = q.category; // e.g. integritas, kolaborasi
-
-        if (personalityTraits[category] !== undefined) {
-          personalityTraits[category] += score;
-          personalityCounts[category]++;
-        }
-      }
-    });
-
-    // IQ calculation (base 70, max correct 75, range 70 to 140)
-    const iq = 70 + Math.round((correctCognitive / totalCognitive) * 70);
-
-    // IQ Classification
-    let classification = 'Rata-rata';
-    if (iq >= 130) {
-      classification = 'Sangat Superior';
-    } else if (iq >= 120) {
-      classification = 'Superior';
-    } else if (iq >= 110) {
-      classification = 'Rata-rata Atas';
-    } else if (iq >= 90) {
-      classification = 'Rata-rata';
-    } else if (iq >= 80) {
-      classification = 'Rata-rata Bawah';
-    } else {
-      classification = 'Batas Lambat Belajar';
+    if (sessionModule === 'cognitive') {
+      return handleCognitive(sessionId, answers, duration, sql);
+    } else if (sessionModule === 'personality') {
+      return handlePersonality(sessionId, answers, duration, sql);
     }
 
-    // Personality percentage calculation (Max score per category = count * 4)
-    const personalityResult = {};
-    for (const trait in personalityTraits) {
-      const maxScore = (personalityCounts[trait] || 5) * 4;
-      personalityResult[trait] = Math.round((personalityTraits[trait] / maxScore) * 100);
-    }
-
-    // Complete result details structure matching PHP side
-    const resultDetail = {
-      iq,
-      classification,
-      verbal: {
-        correct: verbalCorrect,
-        total: 25,
-        score: Math.round((verbalCorrect / 25) * 100)
-      },
-      numerik: {
-        correct: numerikCorrect,
-        total: 25,
-        score: Math.round((numerikCorrect / 25) * 100)
-      },
-      logika: {
-        correct: logikaCorrect,
-        total: 25,
-        score: Math.round((logikaCorrect / 25) * 100)
-      },
-      kepribadian: personalityResult
-    };
-
-    // Update test session
-    await sql`
-      UPDATE test_sessions
-      SET status = 'completed',
-          answers = ${JSON.stringify(answers)},
-          score = ${iq},
-          result_detail = ${JSON.stringify(resultDetail)},
-          personality_type = ${classification},
-          correct_answers = ${correctCognitive},
-          duration_seconds = ${duration},
-          completed_at = NOW()
-      WHERE id = ${sessionId}
-    `;
-
-    return NextResponse.json({
-      ok: true,
-      sessionId,
-      score: iq,
-      classification
-    });
+    return NextResponse.json({ error: 'Unknown module' }, { status: 400 });
   } catch (err) {
     console.error('Submit API Error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
+}
+
+async function handleCognitive(sessionId, answers, duration, sql) {
+  const questions = await sql`
+    SELECT id, category, correct_answer, "order" FROM test_questions
+    WHERE test_type = 'cognitive' AND is_active = true ORDER BY "order" ASC
+  `;
+
+  let logikaCorrect = 0, verbalCorrect = 0, spasialCorrect = 0;
+
+  questions.forEach((q, idx) => {
+    const userAns = answers[idx] !== undefined ? answers[idx] : null;
+    const isCorrect = userAns !== null && parseInt(userAns) === parseInt(q.correct_answer);
+    if (isCorrect) {
+      if (idx < 25) logikaCorrect++;
+      else if (idx < 50) verbalCorrect++;
+      else spasialCorrect++;
+    }
+  });
+
+  const totalCorrect = logikaCorrect + verbalCorrect + spasialCorrect;
+  const totalQuestions = 75;
+
+  // IQ calculation
+  const iq = 70 + Math.round(
+    ((logikaCorrect / 25) * 0.35 + (verbalCorrect / 25) * 0.35 + (spasialCorrect / 25) * 0.30) * 70
+  );
+
+  let classification = 'Rata-rata';
+  if (iq >= 130) classification = 'Sangat Superior';
+  else if (iq >= 120) classification = 'Superior';
+  else if (iq >= 110) classification = 'Rata-rata Atas';
+  else if (iq >= 90) classification = 'Rata-rata';
+  else if (iq >= 80) classification = 'Rata-rata Bawah';
+  else classification = 'Batas Lambat Belajar';
+
+  const resultDetail = {
+    iq, classification,
+    logika: { correct: logikaCorrect, total: 25, score: Math.round((logikaCorrect / 25) * 100) },
+    verbal: { correct: verbalCorrect, total: 25, score: Math.round((verbalCorrect / 25) * 100) },
+    spasial: { correct: spasialCorrect, total: 25, score: Math.round((spasialCorrect / 25) * 100) },
+  };
+
+  await sql`
+    UPDATE test_sessions SET status = 'completed', answers = ${JSON.stringify(answers)},
+      score = ${iq}, result_detail = ${JSON.stringify(resultDetail)},
+      personality_type = ${classification}, correct_answers = ${totalCorrect},
+      duration_seconds = ${duration}, completed_at = NOW()
+    WHERE id = ${sessionId}
+  `;
+
+  return NextResponse.json({ ok: true, sessionId, score: iq, classification });
+}
+
+async function handlePersonality(sessionId, answers, duration, sql) {
+  const questions = await sql`
+    SELECT id, category, options, "order" FROM test_questions
+    WHERE test_type = 'personality' AND is_active = true ORDER BY "order" ASC
+  `;
+
+  // MBTI scoring
+  const mbtiScores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+  // DISC scoring
+  const discScores = { D: 0, I: 0, S: 0, C: 0 };
+  // EPPS trait scoring
+  const eppsTraits = {};
+
+  questions.forEach((q, idx) => {
+    const userAns = answers[idx];
+    if (userAns === undefined || userAns === null) return;
+
+    const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+    const selected = opts[userAns];
+    if (!selected || typeof selected !== 'object') return;
+
+    if (q.category === 'mbti' && selected.dim) {
+      mbtiScores[selected.dim] = (mbtiScores[selected.dim] || 0) + 1;
+    } else if (q.category === 'disc' && selected.dim) {
+      discScores[selected.dim] = (discScores[selected.dim] || 0) + 1;
+    } else if (q.category === 'epps' && selected.trait) {
+      eppsTraits[selected.trait] = (eppsTraits[selected.trait] || 0) + 1;
+    }
+  });
+
+  // Determine MBTI type
+  const mbtiType = [
+    mbtiScores.E >= mbtiScores.I ? 'E' : 'I',
+    mbtiScores.S >= mbtiScores.N ? 'S' : 'N',
+    mbtiScores.T >= mbtiScores.F ? 'T' : 'F',
+    mbtiScores.J >= mbtiScores.P ? 'J' : 'P',
+  ].join('');
+
+  // DISC percentages
+  const discTotal = Math.max(1, Object.values(discScores).reduce((a, b) => a + b, 0));
+  const discProfile = {};
+  for (const k in discScores) discProfile[k] = Math.round((discScores[k] / discTotal) * 100);
+
+  // EPPS top traits
+  const eppsSorted = Object.entries(eppsTraits).sort((a, b) => b[1] - a[1]);
+  const eppsTop5 = eppsSorted.slice(0, 5).map(([trait, score]) => ({ trait, score }));
+
+  const resultDetail = {
+    mbti: { type: mbtiType, scores: mbtiScores },
+    disc: { profile: discProfile, scores: discScores },
+    epps: { traits: eppsTraits, top5: eppsTop5 },
+  };
+
+  await sql`
+    UPDATE test_sessions SET status = 'completed', answers = ${JSON.stringify(answers)},
+      result_detail = ${JSON.stringify(resultDetail)},
+      personality_type = ${mbtiType},
+      duration_seconds = ${duration}, completed_at = NOW()
+    WHERE id = ${sessionId}
+  `;
+
+  return NextResponse.json({ ok: true, sessionId, mbtiType, discProfile });
 }

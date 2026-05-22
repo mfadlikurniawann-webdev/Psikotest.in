@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const postgres = require('postgres');
 const bcrypt = require('bcryptjs');
-const { execSync } = require('child_process');
 
 // 1. Load env variables manually from .env file
 const loadEnv = () => {
@@ -10,7 +9,7 @@ const loadEnv = () => {
   if (fs.existsSync(envPath)) {
     const env = fs.readFileSync(envPath, 'utf8');
     env.split('\n').forEach(line => {
-      const parts = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      const parts = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?$/);
       if (parts) {
         const key = parts[1];
         let val = parts[2] || '';
@@ -119,6 +118,33 @@ async function run() {
       )
     `;
 
+    // New tables for comprehensive psikotes
+    await sql`
+      CREATE TABLE IF NOT EXISTS graphic_submissions (
+        id SERIAL PRIMARY KEY,
+        session_id INTEGER NOT NULL REFERENCES test_sessions(id) ON DELETE CASCADE,
+        test_subtype VARCHAR(50) NOT NULL,
+        image_data TEXT NOT NULL,
+        metadata JSONB,
+        hr_score INTEGER,
+        hr_notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS kraepelin_results (
+        id SERIAL PRIMARY KEY,
+        session_id INTEGER NOT NULL REFERENCES test_sessions(id) ON DELETE CASCADE,
+        row_number INTEGER NOT NULL,
+        answers JSONB NOT NULL,
+        correct_count INTEGER DEFAULT 0,
+        total_count INTEGER DEFAULT 0,
+        time_ms INTEGER,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+
     console.log('Verifying columns...');
     await sql`
       ALTER TABLE users 
@@ -129,6 +155,11 @@ async function run() {
       ADD COLUMN IF NOT EXISTS hr_status VARCHAR(50) DEFAULT 'unreviewed',
       ADD COLUMN IF NOT EXISTS hr_notes TEXT,
       ADD COLUMN IF NOT EXISTS position_applied VARCHAR(255)
+    `;
+    // New column for multi-module test architecture
+    await sql`
+      ALTER TABLE test_sessions
+      ADD COLUMN IF NOT EXISTS module VARCHAR(50)
     `;
 
     // Recreate connection to avoid cached plan issues after ALTER TABLE
@@ -152,36 +183,8 @@ async function run() {
       console.log('HR user already exists.');
     }
 
-    // 4. Extract Questions using PHP helper script
-    console.log('Extracting questions from PHP seeder using scripts/extract.php...');
-    try {
-      if (fs.existsSync(path.join(__dirname, 'extract.php'))) {
-        const questionsJson = execSync('php scripts/extract.php', { encoding: 'utf8' });
-        const questions = JSON.parse(questionsJson);
-        console.log(`Successfully extracted ${questions.length} questions.`);
-
-        if (questions.length > 0) {
-          console.log('Clearing old questions and seeding new ones...');
-          await sql`TRUNCATE TABLE test_questions RESTART IDENTITY CASCADE`;
-          
-          for (const q of questions) {
-            const optionsStr = typeof q.options === 'string' ? q.options : JSON.stringify(q.options);
-            await sql`
-              INSERT INTO test_questions (test_type, category, question, options, correct_answer, "order")
-              VALUES (${q.test_type}, ${q.category}, ${q.question}, ${optionsStr}, ${q.correct_answer}, ${q.order})
-            `;
-          }
-          console.log(`Successfully seeded ${questions.length} questions.`);
-        }
-      } else {
-        console.log('scripts/extract.php not found. Skipping questions seed (using existing database questions).');
-      }
-    } catch (phpErr) {
-      console.log('Warning: Failed to run php scripts/extract.php: ' + phpErr.message);
-      console.log('Continuing migration without seeding new questions.');
-    }
-
     console.log('Migration & Seeding finished successfully!');
+    console.log('Run "node scripts/seed_questions.js" to seed all test questions.');
     process.exit(0);
   } catch (err) {
     console.error('Migration failed with error:', err);
